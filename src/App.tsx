@@ -5,8 +5,6 @@ import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { AuthGuard } from './components/AuthGuard';
-import { useAuthStore } from './store/auth-store';
-import { useEffect, useState } from 'react';
 
 const router = createBrowserRouter([
   {
@@ -24,15 +22,9 @@ const router = createBrowserRouter([
 ])
 
 function App() {
-  const { init } = useAuthStore();
-  const [initAuth, setInitAuth] = useState<boolean>(false);
-
-  useEffect(() => {
-    init().then(() => setInitAuth(true));
-  }, []);
 
   return <>
-    {initAuth && <RouterProvider router={router} />}
+    <RouterProvider router={router} />
   </>
 }
 

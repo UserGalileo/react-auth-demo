@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useContext, useEffect, useState } from 'react';
+import React, { PropsWithChildren, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth-store';
 
@@ -15,7 +15,7 @@ export function AuthGuard({ children }: PropsWithChildren) {
       if (!user) {
         navigate('/login');
       }
-    });
+    })
   }, []);
 
   // If the user logs out, go to login
