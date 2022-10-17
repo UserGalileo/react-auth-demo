@@ -3,8 +3,8 @@ import * as React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
-import { Register } from './pages/Register';
 import { AuthGuard } from './components/AuthGuard';
+import { LoginCallback } from './pages/LoginCallback';
 
 const router = createBrowserRouter([
   {
@@ -16,8 +16,8 @@ const router = createBrowserRouter([
     element: <Login />
   },
   {
-    path: '/register',
-    element: <Register />
+    path: '/auth-callback',
+    element: <LoginCallback />
   }
 ])
 

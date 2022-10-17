@@ -1,52 +1,57 @@
 import create from 'zustand';
-import { http } from '../utils/http';
-import { Credentials, RegisterCredentials, Tokens, User } from '../models/auth';
-import { endpoints } from '../utils/endpoints';
+import { User } from '../models/auth';
+import { UserManager, User as OidcUser } from 'oidc-client';
+import { config } from '../utils/oauth-config';
+
+const userManager = new UserManager(config);
+
+function extractUser(user: OidcUser | null): User | null {
+  if (user) {
+    const { email, name: displayName } = user.profile;
+    return { email, displayName } as User;
+  }
+  return null;
+}
 
 interface AuthStore {
-  user: User | null,
-  login: (cred: Credentials) => Promise<User | null>,
-  logout: () => Promise<boolean>,
-  register: (cred: RegisterCredentials) => Promise<unknown>,
-  fetchUser: (force?: boolean) => Promise<User | null>,
+  user: User | null;
+  getAccessToken: () => Promise<string | undefined>;
+  fetchUser: () => Promise<User | null>;
+  login: () => Promise<boolean>;
+  completeAuthentication: () => Promise<any>;
+  logout: () => void;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
-  login: (credentials) => {
-    return http.post<Tokens>(endpoints.domain + endpoints.login, credentials)
-        .then(res => {
-          const { access_token, refresh_token } = res.data;
-          localStorage.setItem('access_token', access_token);
-          localStorage.setItem('refresh_token', refresh_token);
-          return get().fetchUser();
-        })
+  getAccessToken() {
+    return userManager.getUser().then(user => user?.access_token);
   },
-  logout: () => {
-    return http.post<unknown>(endpoints.domain + endpoints.logout, {
-      refresh_token: localStorage.getItem('refresh_token')
+  fetchUser() {
+    return userManager.getUser().then(u => {
+      const user = extractUser(u);
+      set({ user });
+      return user;
+    });
+  },
+  login() {
+    return userManager.signinPopup().then(
+        user => {
+          console.log(user);
+          set({ user: extractUser(user) });
+          return true;
+        }
+    ).catch((e) => {
+      console.log(e)
+      return false;
     })
-        .then(() => true)
-        .catch(() => false)
-        .finally(() => {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          set({ user: null });
-        })
   },
-  register: (credentials) => {
-    return http.post<unknown>(endpoints.domain + endpoints.register, credentials);
+  completeAuthentication() {
+    return userManager.signinPopupCallback(window.location.href);
   },
-  fetchUser: (force = false) => {
-    if (get().user && !force) return Promise.resolve(get().user);
-    return http.get<User>(endpoints.domain + endpoints.userInfo)
-        .then(({ data: user }) => {
-          if (!user) return null;
-          set({ user });
-          return user;
-        })
-        .catch(() => {
-          return null;
-        })
+  logout() {
+    userManager.removeUser().then(() => {
+      set({ user: null });
+    })
   }
 }));
