@@ -7,7 +7,7 @@ const refreshTokenFn = async () => {
   const token = localStorage.getItem("refresh_token");
 
   try {
-    const response = await http.post<Tokens>(endpoints.refreshToken, {
+    const response = await http.post<Tokens>(endpoints.domain + endpoints.refreshToken, {
       refresh_token: token,
     });
 
