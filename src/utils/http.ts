@@ -1,7 +1,11 @@
 import axios from "axios";
 
 import { refreshToken } from "./refresh-token";
+import { endpoints } from './endpoints';
 
+/**
+ * This interceptor appends the AccessToken to every request.
+ */
 axios.interceptors.request.use(
     async (config) => {
       const token = localStorage.getItem('access_token');
@@ -18,13 +22,22 @@ axios.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+/**
+ * This interceptor tries to refresh the AccessToken.
+ */
 axios.interceptors.response.use(
     (response) => response,
     async (error) => {
       const config = error?.config;
 
-      if (error?.response?.status === 401 && !config?.sent) {
-        config.sent = true;
+      const was401  = error?.response?.status === 401;
+      const wasNotRefreshToken = error?.request.responseURL !== (endpoints.domain + endpoints.refreshToken);
+
+      /**
+       * If it's a 401 error (forbidden), and the request was NOT
+       * to refresh the token (avoid loops), try to refresh the token.
+       */
+      if (was401 && wasNotRefreshToken) {
 
         const result = await refreshToken();
 
@@ -35,6 +48,8 @@ axios.interceptors.response.use(
           };
         }
 
+        // Do the original request once again,
+        // with the new AccessToken.
         return axios(config);
       }
       return Promise.reject(error);

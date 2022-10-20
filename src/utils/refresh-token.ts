@@ -7,7 +7,7 @@ const refreshTokenFn = async () => {
   const token = localStorage.getItem("refresh_token");
 
   try {
-    const response = await http.post<Tokens>(endpoints.refreshToken, {
+    const response = await http.post<Tokens>(endpoints.domain + endpoints.refreshToken, {
       refresh_token: token,
     });
 
@@ -16,10 +16,10 @@ const refreshTokenFn = async () => {
     if (!access_token) {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
+    } else {
+      localStorage.setItem("access_token", access_token);
+      localStorage.setItem("refresh_token", refresh_token);
     }
-
-    localStorage.setItem("access_token", access_token);
-    localStorage.setItem("refresh_token", refresh_token);
 
     return response.data;
   } catch (error) {
